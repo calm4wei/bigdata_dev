@@ -1,5 +1,6 @@
 package com.zqykj.geohash;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.zqykj.bigdata.alert.entity.UFlag;
@@ -82,6 +83,28 @@ public class GeoHashTest {
 
         List<String> list = jedis.hmget("geohash@testELP", "testCase2-1", "testCase2-2");
         foreachList(list);
+        System.out.println("==================");
+        String s = jedis.hget("geohash@testELP", "testCase2-1");
+        System.out.println(s);
+        System.out.println("--------");
+        JSONArray arr = JSONArray.parseArray(s);
+        System.out.println(arr);
+        System.out.println(arr.size());
+
+        jedis.close();
+    }
+
+    @Test
+    public void testHGet() {
+        Jedis jedis = JedisDataSourceUtils.getJedis();
+        String s = jedis.hget("geohash@testELP", "testCase2-1");
+        System.out.println(s);
+        System.out.println("--------");
+        JSONArray arr = JSONArray.parseArray(s);
+        JSON.parseArray(s);
+        System.out.println(arr);
+        System.out.println(arr.size());
+
         jedis.close();
     }
 

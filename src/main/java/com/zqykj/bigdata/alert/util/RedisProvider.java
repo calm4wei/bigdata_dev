@@ -86,6 +86,10 @@ public class RedisProvider {
         return str;
     }
 
+    public static String hGet(String key, String field) {
+        return getJedis().hget(key, field);
+    }
+
     /**
      * 模糊key查询
      *

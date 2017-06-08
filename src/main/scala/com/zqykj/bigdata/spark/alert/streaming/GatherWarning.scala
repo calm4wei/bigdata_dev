@@ -85,11 +85,12 @@ object GatherWarning {
     println("hKey=" + hKey + " ,type=" + entityType + " ,uFlag=" + uFlag)
 
     // 查询 redis
-    val elements = hmGet(hKey, entityType)
+    val redisArrString = hGet(hKey, entityType)
     // 不存在则直接插入
-    if (Option(elements.get(0)).isEmpty) insert(hKey, entityType, uFlag) else return
+    if (Option(redisArrString).isEmpty) insert(hKey, entityType, uFlag) else return
 
     // 检查有没有过期的数据
+    println("check...")
 
     // 更新redis
 
