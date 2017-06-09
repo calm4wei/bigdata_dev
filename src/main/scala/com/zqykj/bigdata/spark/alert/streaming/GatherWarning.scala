@@ -5,9 +5,9 @@ import java.util.{Date, UUID}
 
 import com.alibaba.fastjson.JSON
 import com.zqykj.bigdata.alert.entity.{CongestWarningEvent, DetectedData, UFlag}
-import com.zqykj.bigdata.alert.util.{DateUtils, RedisProvider}
-import com.zqykj.bigdata.kafka.Producer
+import com.zqykj.bigdata.alert.util.{DateUtils}
 import com.zqykj.bigdata.spark.LoggerLevels
+import com.zqykj.bigdata.spark.alert.kafka.KafkaProducer
 import com.zqykj.bigdata.spark.alert.redis.RedisUtils
 import com.zqykj.job.geo.utils.GeoHash
 import kafka.serializer.StringDecoder
@@ -23,18 +23,14 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
   */
 object GatherWarning extends Logging {
 
-  var producer: Producer = null
-
   def main(args: Array[String]): Unit = {
 
     LoggerLevels.setStreamingLogLevels(Level.WARN)
 
     val sparkConf = new SparkConf()
       .setAppName("gather warning")
-    //      .setMaster("local[4]")
+      .setMaster("local[4]")
     // 初始化配置
-    producer = new Producer(sparkConf.get("kafka.stream.warning.type.topic", "congestS"))
-
     val ssc = new StreamingContext(sparkConf, Seconds(2))
 
     // brokers:kafka的broker 地址， topics: kafka订阅主题
@@ -129,7 +125,7 @@ object GatherWarning extends Logging {
     val t1 = System.currentTimeMillis()
     val event = new CongestWarningEvent
     event.setEventId(UUID.randomUUID().toString)
-    event.setWarningType(producer.getTopic)
+    event.setWarningType("congestS")
     event.setOrigineTime(entity.getTimestamp)
     event.setProduceTime(entity.getTimestamp)
     event.setEventTime(new Date().getTime)
@@ -139,7 +135,7 @@ object GatherWarning extends Logging {
     event.setInLabel(entity.getLabel)
     event.setGeohashString(geoHash)
     event.setFlagList(list)
-    producer.send("", event.toString)
+    KafkaProducer.send("congestS", "", event.toString, true)
     val t2 = System.currentTimeMillis()
     logInfo("send msg to kafka time=" + (t2 - t1))
   }
