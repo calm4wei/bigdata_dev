@@ -23,7 +23,7 @@ public class RedisProvider {
         jedisconfig.setMaxTotal(sparkConf.getInt("redis.pool.max.total", 50));
 
         jedispool = new JedisPool(jedisconfig,
-                sparkConf.get("redis.ip", "192.168.1.100"),
+                sparkConf.get("redis.ip", "192.168.0.63"),
                 sparkConf.getInt("redis.port", 6379),
                 sparkConf.getInt("redis.timeout", 10000));
     }

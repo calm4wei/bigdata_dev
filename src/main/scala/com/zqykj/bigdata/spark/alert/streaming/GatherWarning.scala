@@ -8,6 +8,7 @@ import com.zqykj.bigdata.alert.entity.{CongestWarningEvent, DetectedData, UFlag}
 import com.zqykj.bigdata.alert.util.{DateUtils, RedisProvider}
 import com.zqykj.bigdata.kafka.Producer
 import com.zqykj.bigdata.spark.LoggerLevels
+import com.zqykj.bigdata.spark.alert.redis.RedisUtils
 import com.zqykj.job.geo.utils.GeoHash
 import kafka.serializer.StringDecoder
 import org.apache.log4j.Level
@@ -30,23 +31,24 @@ object GatherWarning extends Logging {
 
     val sparkConf = new SparkConf()
       .setAppName("gather warning")
-    //.setMaster("local[4]")
+    //      .setMaster("local[4]")
     // 初始化配置
     producer = new Producer(sparkConf.get("kafka.stream.warning.type.topic", "congestS"))
-    RedisProvider.initRedisContext(sparkConf)
 
     val ssc = new StreamingContext(sparkConf, Seconds(2))
 
     // brokers:kafka的broker 地址， topics: kafka订阅主题
-    val Array(brokers, topics) = Array(sparkConf.get("kafka.stream.warning.brokers", "wf-vm:9092"),
-      sparkConf.get("kafka.stream.warning.topic", "detected"))
+    val Array(brokers, topics) = Array(sparkConf.get("kafka.stream.warning.brokers", "Master:9092,Work01:9092,Work03:9092"),
+      sparkConf.get("kafka.stream.warning.topic", "gather"))
     val topicsSet = topics.split(",").toSet
 
     // 构造kafka参数
+    println("brokers=" + brokers + " ,topic=" + topics)
     val kafkaParams = Map[String, String](
       "metadata.broker.list" -> brokers,
       "auto.offset.reset" -> sparkConf.get("kafka.stream.warning.auto.offset.reset", "largest"),
-      "group.id" -> sparkConf.get("kafka.stream.warning.group.id", "cluster1"))
+      "group.id" -> sparkConf.get("kafka.stream.warning.group.id", "cluster1"),
+      "auto.create.topics.enable" -> "true")
 
     // streaming 接收 kafka 的消息
     val messages = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, topicsSet)
@@ -91,16 +93,15 @@ object GatherWarning extends Logging {
     val uFlag = new UFlag(line.getUid, line.getTimestamp)
     logInfo("hKey=" + hKey + " ,type=" + entityType + " ,uFlag=" + uFlag)
 
-    import com.zqykj.bigdata.spark.alert.redis.RedisService._
     val t3 = System.currentTimeMillis()
     // 查询 redis
-    val redisArrString = hGet(hKey, entityType)
+    val redisArrString = RedisUtils.hGet(hKey, entityType)
     val t4 = System.currentTimeMillis()
     logInfo("query redis time=" + (t4 - t3) + ", redisArrString=" + redisArrString)
     // 不存在则直接插入
     if (Option(redisArrString).isEmpty) {
       val t5 = System.currentTimeMillis()
-      insert(hKey, entityType, uFlag)
+      RedisUtils.insert(hKey, entityType, uFlag)
       val t6 = System.currentTimeMillis()
       logInfo("insert redis time=" + (t6 - t5))
       return
@@ -115,7 +116,7 @@ object GatherWarning extends Logging {
     val converList = bufferAsJavaList(reList)
     reList.add(uFlag)
     // 更新redis
-    insert(hKey, entityType, converList)
+    RedisUtils.insert(hKey, entityType, converList)
     val t8 = System.currentTimeMillis()
     logInfo("check and update redis time=" + (t8 - t7))
 
