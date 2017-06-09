@@ -1,5 +1,7 @@
 package com.zqykj.bigdata.alert.entity;
 
+import com.alibaba.fastjson.JSON;
+
 import java.util.List;
 
 /**
@@ -9,9 +11,9 @@ public class CongestWarningEvent {
 
     private String eventId;
     private String warningType;
-    private String origineTime;
-    private String produceTime;
-    private String eventTime;
+    private Long origineTime;
+    private Long produceTime;
+    private Long eventTime;
     private String inElpId;
     private String inTypeId;
     private String inUid;
@@ -21,19 +23,7 @@ public class CongestWarningEvent {
 
     @Override
     public String toString() {
-        return "CongestWarningEvent{" +
-                "eventId='" + eventId + '\'' +
-                ", warningType='" + warningType + '\'' +
-                ", origineTime='" + origineTime + '\'' +
-                ", produceTime='" + produceTime + '\'' +
-                ", eventTime='" + eventTime + '\'' +
-                ", inElpId='" + inElpId + '\'' +
-                ", inTypeId='" + inTypeId + '\'' +
-                ", inUid='" + inUid + '\'' +
-                ", inLabel='" + inLabel + '\'' +
-                ", geohashString='" + geohashString + '\'' +
-                ", flagList=" + flagList +
-                '}';
+        return JSON.toJSONString(this);
     }
 
     public String getEventId() {
@@ -52,27 +42,27 @@ public class CongestWarningEvent {
         this.warningType = warningType;
     }
 
-    public String getOrigineTime() {
+    public Long getOrigineTime() {
         return origineTime;
     }
 
-    public void setOrigineTime(String origineTime) {
+    public void setOrigineTime(Long origineTime) {
         this.origineTime = origineTime;
     }
 
-    public String getProduceTime() {
+    public Long getProduceTime() {
         return produceTime;
     }
 
-    public void setProduceTime(String produceTime) {
+    public void setProduceTime(Long produceTime) {
         this.produceTime = produceTime;
     }
 
-    public String getEventTime() {
+    public Long getEventTime() {
         return eventTime;
     }
 
-    public void setEventTime(String eventTime) {
+    public void setEventTime(Long eventTime) {
         this.eventTime = eventTime;
     }
 

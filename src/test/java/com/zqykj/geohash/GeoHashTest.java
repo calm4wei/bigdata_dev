@@ -7,6 +7,7 @@ import com.zqykj.bigdata.alert.entity.UFlag;
 import com.zqykj.bigdata.alert.util.JedisDataSourceUtils;
 import com.zqykj.bigdata.alert.util.RedisProvider;
 import com.zqykj.job.geo.utils.GeoHash;
+import org.apache.spark.SparkConf;
 import org.junit.Test;
 import redis.clients.jedis.Jedis;
 
@@ -48,14 +49,8 @@ public class GeoHashTest {
     @Test
     public void getHkeyHash() {
         Jedis jedis = new Jedis("wf-vm", 6379);
-        jedis.auth("123456");
+        //jedis.auth("123456");
         List<String> list = jedis.hmget("geohash@testELP", "testCase2-1");
-        foreachList(list);
-    }
-
-    @Test
-    public void getHkeyHashByRedisProvider() {
-        List<String> list = RedisProvider.hmGet("geohash@testELP", "testCase2-3");
         foreachList(list);
     }
 
@@ -96,16 +91,15 @@ public class GeoHashTest {
 
     @Test
     public void testHGet() {
-        Jedis jedis = JedisDataSourceUtils.getJedis();
-        String s = jedis.hget("geohash@testELP", "testCase2-1");
+        SparkConf conf = new SparkConf();
+        RedisProvider.initRedisContext(conf);
+        String s = RedisProvider.hGet("geohash@testELP", "testCase2-1");
         System.out.println(s);
         System.out.println("--------");
         JSONArray arr = JSONArray.parseArray(s);
         JSON.parseArray(s);
         System.out.println(arr);
         System.out.println(arr.size());
-
-        jedis.close();
     }
 
 

@@ -13,6 +13,14 @@ public class Producer implements Runnable {
     private final String topic;
     private final Boolean isAsync;
 
+    public String getTopic() {
+        return topic;
+    }
+
+    public Producer(String topic) {
+        this(topic, true);
+    }
+
     public Producer(String topic, Boolean isAsync) {
         Properties props = new Properties();
         props.put("bootstrap.servers", "wf-vm:9092");
@@ -25,9 +33,6 @@ public class Producer implements Runnable {
     }
 
     public void run() {
-        while (true) {
-
-        }
     }
 
     public void send(String key, String value) {

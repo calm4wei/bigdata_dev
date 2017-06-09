@@ -1,5 +1,6 @@
 package com.zqykj.bigdata.alert.util;
 
+import org.apache.spark.SparkConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -9,35 +10,22 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisException;
 
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.*;
 
 public class RedisProvider {
     protected static final Logger LOG = LoggerFactory.getLogger(RedisProvider.class);
     protected static JedisPool jedispool;
-    private static String configPath = "conf/zqy-app.properties";
-    public static Properties CONFIG = null;
 
-    static {
-        CONFIG = new Properties();
-        try {
-            CONFIG.load(new FileReader(configPath));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public static void initRedisContext(SparkConf sparkConf) {
 
         JedisPoolConfig jedisconfig = new JedisPoolConfig();
-        jedisconfig.setMinIdle(Integer.valueOf(CONFIG
-                .getProperty("redis.pool.min.idle")));
-        jedisconfig.setMaxTotal(Integer.valueOf(CONFIG
-                .getProperty("redis.pool.max.total")));
+        jedisconfig.setMinIdle(sparkConf.getInt("redis.pool.min.idle", 2));
+        jedisconfig.setMaxTotal(sparkConf.getInt("redis.pool.max.total", 50));
 
         jedispool = new JedisPool(jedisconfig,
-                CONFIG.getProperty("redis.ip"),
-                Integer.valueOf(CONFIG.getProperty("redis.port")),
-                Integer.valueOf(CONFIG.getProperty("redis.timeout")),
-                CONFIG.getProperty("redis.password"));
+                sparkConf.get("redis.ip", "192.168.1.100"),
+                sparkConf.getInt("redis.port", 6379),
+                sparkConf.getInt("redis.timeout", 10000));
     }
 
     public static Jedis getJedis() {
