@@ -34,12 +34,13 @@ object KafkaProducer extends Serializable with Logging {
     if (isAsync) { // 异步发送
       producer.send(new ProducerRecord[String, String](topic, key, value), new Callback() {
         override def onCompletion(recordMetadata: RecordMetadata, e: Exception): Unit = {
+          println("topic=" + recordMetadata.topic() + " ,offset=" + recordMetadata.offset())
         }
       })
     } else { // 同步发送
       try {
         producer.send(new ProducerRecord[String, String](topic, key, value)).get
-        System.out.println("Sent message: (" + key + ", " + value + ")")
+        println("Sent message: (" + key + ", " + value + ")")
       } catch {
         case e@(_: InterruptedException | _: ExecutionException) =>
           e.printStackTrace()
