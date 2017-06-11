@@ -34,7 +34,7 @@ object KafkaProducer extends Serializable with Logging {
     if (isAsync) { // 异步发送
       producer.send(new ProducerRecord[String, String](topic, key, value), new Callback() {
         override def onCompletion(recordMetadata: RecordMetadata, e: Exception): Unit = {
-          println("topic=" + recordMetadata.topic() + " ,offset=" + recordMetadata.offset())
+          //println("topic=" + recordMetadata.topic() + " ,offset=" + recordMetadata.offset())
         }
       })
     } else { // 同步发送

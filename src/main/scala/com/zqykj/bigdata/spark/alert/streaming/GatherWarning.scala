@@ -29,7 +29,7 @@ object GatherWarning extends Logging {
 
     val sparkConf = new SparkConf()
       .setAppName("gather warning")
-    //      .setMaster("local[4]")
+    //          .setMaster("local[4]")
     // 初始化配置
     val ssc = new StreamingContext(sparkConf, Seconds(2))
 

@@ -2,7 +2,6 @@ package com.zqykj.geohash;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.zqykj.bigdata.alert.entity.UFlag;
 import com.zqykj.bigdata.alert.util.JedisDataSourceUtils;
 import com.zqykj.bigdata.alert.util.RedisProvider;

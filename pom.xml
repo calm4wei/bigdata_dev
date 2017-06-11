@@ -129,6 +129,51 @@
                             </excludes>
                         </filter>
                     </filters>
+                    <artifactSet>
+                        <excludes>
+                            <exclude>org.apache.spark:spark-core_${scala.binary.version}</exclude>
+                            <exclude>org.apache.spark:spark-streaming_${scala.binary.version}</exclude>
+                            <exclude>org.apache.spark:spark-hive_${scala.binary.version}</exclude>
+                            <exclude>org.apache.hadoop:*</exclude>
+                            <exclude>com.google.protobuf_spark:*</exclude>
+                            <exclude>com.twitter:chill_${scala.binary.version}</exclude>
+                            <exclude>com.twitter:chill-java</exclude>
+                            <exclude>org.spark-project.akka:*</exclude>
+                            <exclude>org.spark-project:*</exclude>
+                            <exclude>net.java.dev.jets3t:jets3t</exclude>
+                            <exclude>org.eclipse.jetty:*</exclude>
+                            <exclude>org.eclipse.jetty.orbit:*</exclude>
+                            <exclude>org.slf4j:*</exclude>
+                            <exclude>org.scala-lang:scala-library</exclude>
+                            <exclude>commons-httpclient:commons-httpclient</exclude>
+                            <exclude>org.apache.curator:*</exclude>
+                            <exclude>org.apache.commons:commons-lang3</exclude>
+                            <exclude>com.google.code.findbugs</exclude>
+                            <exclude>com.ning:compress-lzf</exclude>
+                            <exclude>org.xerial.snappy:snappy-java</exclude>
+                            <exclude>net.jpountz.lz4:lz4</exclude>
+                            <exclude>com.esotericsoftware.kryo:*</exclude>
+                            <exclude>log4j:log4j</exclude>
+                            <exclude>com.esotericsoftware.reflectasm:reflectasm</exclude>
+                            <exclude>com.esotericsoftware.minlog:minlog</exclude>
+                            <exclude>org.objenesis:objenesis</exclude>
+                            <exclude>commons-net:commons-net</exclude>
+                            <exclude>org.apache.james:*</exclude>
+                            <exclude>org.ow2.asm:asm-debug-all</exclude>
+                            <exclude>javax.xml.stream:stax-api</exclude>
+                            <exclude>javax.ws.rs:javax.ws.rs-api</exclude>
+                            <exclude>xml-apis:xml-apis</exclude>
+                            <exclude>org.ow2.asm:asm</exclude>
+                            <exclude>com.codahale.metrics:*</exclude>
+                            <exclude>io.dropwizard.metrics:*</exclude>
+                            <exclude>com.sun.xml.bind:jaxb-impl</exclude>
+                            <exclude>com.sun.jersey:jersey-client</exclude>
+                            <exclude>org.mortbay.jetty:jetty-util</exclude>
+                            <exclude>commons-beanutils:commons-beanutils-core</exclude>
+                            <exclude>commons-beanutils:commons-beanutils</exclude>
+                            <exclude>commons-digester:commons-digester</exclude>
+                        </excludes>
+                    </artifactSet>
                 </configuration>
             </plugin>
 
@@ -208,28 +253,86 @@
             <version>${scala.version}</version>
         </dependency>
 
+        <!-- hadoop -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-core</artifactId>
+            <version>${hadoop.mr.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-mapper-asl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-core-asl</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
             <version>${hadoop.version}</version>
             <exclusions>
                 <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet.jsp</groupId>
+                    <artifactId>jsp-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jruby</groupId>
+                    <artifactId>jruby-complete</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.code.findbugs</groupId>
+                    <artifactId>jsr305</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-mapper-asl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-core-asl</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>commons-collections</groupId>
+                    <artifactId>commons-collections</artifactId>
+                </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-hdfs</artifactId>
-            <version>${hadoop.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-core</artifactId>
-            <version>${hadoop.mr.version}</version>
         </dependency>
 
         <!-- spark -->
@@ -237,6 +340,24 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-mapper-asl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-core-asl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -249,11 +370,11 @@
             <version>${spark.version}</version>
         </dependency>
         <!-- spark hive -->
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-hive_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
-        </dependency>
+        <!--<dependency>-->
+        <!--<groupId>org.apache.spark</groupId>-->
+        <!--<artifactId>spark-hive_${scala.binary.version}</artifactId>-->
+        <!--<version>${spark.version}</version>-->
+        <!--</dependency>-->
 
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -273,6 +394,11 @@
             <version>2.9.0</version>
             <type>jar</type>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>RELEASE</version>
         </dependency>
     </dependencies>
 
