@@ -14,7 +14,7 @@ import kafka.serializer.StringDecoder
 import org.apache.log4j.Level
 import org.apache.spark.{Logging, SparkConf}
 import org.apache.spark.streaming.dstream.DStream
-import org.apache.spark.streaming.kafka.KafkaUtils
+import org.apache.spark.streaming.kafka.KafkaManager
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 
 /**
@@ -29,8 +29,11 @@ object GatherWarning extends Logging {
 
     val sparkConf = new SparkConf()
       .setAppName("gather warning")
-    //          .setMaster("local[4]")
-    // 初始化配置
+      // .set("spark.streaming.stopGracefullyOnShutdown", "true") // 消息消费完成后，优雅的关闭spark streaming
+      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .set("spark.streaming.kafka.maxRatePerPartition", "10") // Direct 方式：从每个Kafka分区读取数据的最大速率（每秒记录数）
+    //      .setMaster("local[4]")
+
     val ssc = new StreamingContext(sparkConf, Seconds(2))
 
     // brokers:kafka的broker 地址， topics: kafka订阅主题
@@ -43,18 +46,30 @@ object GatherWarning extends Logging {
     val kafkaParams = Map[String, String](
       "metadata.broker.list" -> brokers,
       "auto.offset.reset" -> sparkConf.get("kafka.stream.warning.auto.offset.reset", "largest"),
-      "group.id" -> sparkConf.get("kafka.stream.warning.group.id", "cluster1"),
-      "auto.create.topics.enable" -> "true")
+      "group.id" -> sparkConf.get("kafka.stream.warning.group.id", "cluster1")
+    )
 
-    // streaming 接收 kafka 的消息
-    val messages = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, topicsSet)
-      .map(_._2)
+    // kafka直连方式： 指定topic，从指定的offset处开始消费
+    val km = new KafkaManager(kafkaParams)
+    val messages = km.createDirectStream[String, String, StringDecoder, StringDecoder](
+      ssc, kafkaParams, topicsSet).map(_._2)
 
     val dataObjs = parseJson(messages)
     compare(dataObjs)
 
     ssc.start()
     ssc.awaitTermination()
+
+
+    // Spark 1.4版本之前: 通过添加钩子来优雅关闭，保证Streaming程序关闭的时候不丢失数据
+    // Spark 1.4版本之后： Spark内置提供了spark.streaming.stopGracefullyOnShutdown参数来决定是否需要以Gracefully方式来关闭Streaming程序
+    //    sys.addShutdownHook {
+    //      println("Gracefully stopping Application...")
+    //      ssc.stop(stopSparkContext = true, stopGracefully = true)
+    //      // wait something
+    //      println("Application stopped gracefully")
+    //    }
+
   }
 
   def parseJson(dstream: DStream[String]): DStream[DetectedData] = {
@@ -66,13 +81,15 @@ object GatherWarning extends Logging {
   def compare(dstream: DStream[DetectedData]): Unit = {
     dstream.foreachRDD {
       rdd => {
-        rdd.foreachPartition(p =>
+        rdd.foreachPartition(p => {
+          // val list = p.toList
           p.foreach {
             line => {
               println("update redis...")
               updateRedis(line)
             }
           }
+        }
         )
       }
     }
@@ -82,7 +99,7 @@ object GatherWarning extends Logging {
     val t1 = System.currentTimeMillis()
     val geoHash = GeoHash.encodeGeohash(line.getLatitude.toDouble, line.getLongitude.toDouble, 5)
     val t2 = System.currentTimeMillis()
-    println("compute geohash time=" + (t2 - t1))
+    println(s"compute geohash time=${t2 - t1}")
 
     val hKey = geoHash + "@" + line.getElpID
     val entityType = line.getEntity_type
@@ -118,7 +135,13 @@ object GatherWarning extends Logging {
       println("check and update redis time=" + (t8 - t7))
 
       // 检查是否超过5个， 将超出的结果输出
-      if (reList.size <= 5) return else sendToKafka(line, reList, geoHash)
+      if (reList.size <= 5) return else if (reList.size < 15000) {
+        sendToKafka(line, reList, geoHash)
+      } else {
+        // TODO 以日志形式存储
+        println(s"uFlag 数量过多, size = ${reList.size}")
+      }
+
     } catch {
       case ex: JSONException => {
         println("JSON parse Exception:" + ex.getMessage)
@@ -145,6 +168,5 @@ object GatherWarning extends Logging {
     val t2 = System.currentTimeMillis()
     println("send msg to kafka time=" + (t2 - t1))
   }
-
 
 }

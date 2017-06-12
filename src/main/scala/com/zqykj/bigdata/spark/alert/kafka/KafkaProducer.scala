@@ -11,7 +11,6 @@ import org.apache.spark.Logging
   */
 object KafkaProducer extends Serializable with Logging {
 
-
   private lazy val producer = {
     val props = new Properties
     props.put("bootstrap.servers", "Master:9092,Work01:9092,Work03:9092")
