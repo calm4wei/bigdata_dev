@@ -32,34 +32,35 @@ object GatherWarning extends Logging {
       .setAppName("gather warning")
       //.set("spark.streaming.stopGracefullyOnShutdown", "true") // 消息消费完成后，优雅的关闭spark streaming
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .set("spark.executor.extraJavaOptions", "-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8")
     //.set("spark.streaming.kafka.maxRatePerPartition", "10") // Direct 方式：从每个Kafka分区读取数据的最大速率（每秒记录数）
     //.setMaster("local[4]")
 
-    val ssc = new StreamingContext(sparkConf, Milliseconds(sparkConf.getInt("stream.kafka.batch.millis.duration", 2000)))
+    val ssc = new StreamingContext(sparkConf, Milliseconds(sparkConf.getInt("spark.stream.kafka.batch.millis.duration", 2000)))
 
     // brokers: kafka的broker 地址， topics: kafka订阅主题
-    val Array(brokers, topics) = Array(sparkConf.get("kafka.stream.warning.brokers", "Master:9092,Work01:9092,Work03:9092"),
-      sparkConf.get("kafka.stream.warning.topics", "gather"))
+    val Array(brokers, topics) = Array(sparkConf.get("spark.kafka.stream.warning.brokers", "Master:9092,Work01:9092,Work03:9092"),
+      sparkConf.get("spark.kafka.stream.warning.topics", "gather"))
     val topicsSet = topics.split(",").toSet
 
     // 构造 streaming integrate kafka 参数
-    println("brokers=" + brokers + " ,topic=" + topics)
+    println("brokers=" + brokers + " ,topic=" + topics + s", kafka.stream.warning.topics=${sparkConf.get("spark.kafka.stream.warning.topics")}")
     val kafkaParams = Map[String, String](
       "metadata.broker.list" -> brokers,
-      "auto.offset.reset" -> sparkConf.get("kafka.stream.warning.auto.offset.reset", "largest"),
-      "group.id" -> sparkConf.get("kafka.stream.warning.group.id", "cluster2")
+      "auto.offset.reset" -> sparkConf.get("spark.kafka.stream.warning.auto.offset.reset", "largest"),
+      "group.id" -> sparkConf.get("spark.kafka.stream.warning.group.id", "cluster2")
     )
 
     // 构造 kafka producer 参数
     val kafkaProParams = Map[String, String](
-      "bootstrap.servers" -> sparkConf.get("warning.type.kafka.brokers", "Master:9092,Work01:9092,Work03:9092"),
-      "client.id" -> sparkConf.get("warning.type.kafka.client.id", "GatherOutProducer2"),
-      "key.serializer" -> sparkConf.get("warning.type.kafka.key.serializer",
+      "bootstrap.servers" -> sparkConf.get("spark.warning.type.kafka.brokers", "Master:9092,Work01:9092,Work03:9092"),
+      "client.id" -> sparkConf.get("spark.warning.type.kafka.client.id", "GatherOutProducer2"),
+      "key.serializer" -> sparkConf.get("spark.warning.type.kafka.key.serializer",
         "org.apache.kafka.common.serialization.StringSerializer"),
-      "value.serializer" -> sparkConf.get("warning.type.kafka.value.serializer",
+      "value.serializer" -> sparkConf.get("spark.warning.type.kafka.value.serializer",
         "org.apache.kafka.common.serialization.StringSerializer")
     )
-    val topicSet = sparkConf.get("warning.type.kafka.congest.topics", "congestS").split(",").toSet
+    val topicSet = sparkConf.get("spark.warning.type.kafka.congest.topics", "congestS").split(",").toSet
 
     // kafka直连方式： 指定topic，从指定的offset处开始消费
     val km = new KafkaManager(kafkaParams)
@@ -123,7 +124,7 @@ object GatherWarning extends Logging {
     try {
       val redisArrString = RedisUtils.hGet(hKey, entityType)
       val t4 = System.currentTimeMillis()
-      println("query redis time=" + (t4 - t3) + ", redisArrString=" + redisArrString)
+      println("query redis time=" + (t4 - t3))
       // 不存在则直接插入
       if (Option(redisArrString).isEmpty) {
         val t5 = System.currentTimeMillis()
@@ -136,7 +137,6 @@ object GatherWarning extends Logging {
       // 检查有没有过期的数据
       import scala.collection.JavaConversions._
       val t7 = System.currentTimeMillis()
-
 
       val reList = JSON.parseArray(redisArrString, classOf[UFlag])
         .filter(u => DateUtils.compare(u.getTimestamp, -1))
