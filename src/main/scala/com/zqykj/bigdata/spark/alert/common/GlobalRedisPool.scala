@@ -8,6 +8,7 @@ import redis.clients.jedis.{JedisPool, JedisPoolConfig}
   */
 object GlobalRedisPool extends Serializable with Logging {
 
+  // sys.addShutdownHook(close())
 
   /**
     * The Redis Pool
@@ -32,6 +33,7 @@ object GlobalRedisPool extends Serializable with Logging {
   }
 
   def apply(): JedisPool = redisPool
+
   /**
     * Close HBase connection
     */

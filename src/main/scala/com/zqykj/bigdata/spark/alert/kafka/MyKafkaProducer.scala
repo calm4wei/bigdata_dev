@@ -9,18 +9,29 @@ import org.apache.spark.Logging
 /**
   * Created by weifeng on 2017/6/9.
   */
-object KafkaProducer extends Serializable with Logging {
+object MyKafkaProducer extends Serializable with Logging {
+
+  var kafkaParams: Map[String, String] = null
+
+  def setkafkaParams(params: Map[String, String]): Unit = {
+    this.kafkaParams = params
+  }
 
   private lazy val producer = {
-    val props = new Properties
-    props.put("bootstrap.servers", "Master:9092,Work01:9092,Work03:9092")
-    props.put("client.id", "GatherOutProducer")
-    props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-    props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-    new KafkaProducer[String, String](props)
+    new KafkaProducer[String, String](initProperties())
   }
 
   def apply(): KafkaProducer[String, String] = producer
+
+  def initProperties(): Properties = {
+    println(kafkaParams.seq.mkString(","))
+    val props = new Properties
+    props.put("bootstrap.servers", kafkaParams.get("bootstrap.servers").get)
+    props.put("client.id", kafkaParams.get("client.id").get)
+    props.put("key.serializer", kafkaParams.get("key.serializer").get)
+    props.put("value.serializer", kafkaParams.get("value.serializer").get)
+    props
+  }
 
   /**
     *
