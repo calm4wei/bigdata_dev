@@ -12,33 +12,33 @@ import com.zqykj.bigdata.spark.alert.common.GlobalRedisPool
   */
 object RedisUtils {
 
-  def hGet(hKey: String, entityType: String): String = {
-    val jedis = GlobalRedisPool().getResource
-    GlobalRedisPool().returnResource(jedis)
-    jedis.hget(hKey, entityType)
-  }
+	def hGet(hKey: String, entityType: String): String = {
+		val jedis = GlobalRedisPool().getResource
+		GlobalRedisPool().returnResource(jedis)
+		jedis.hget(hKey, entityType)
+	}
 
-  def insert(hkey: String, entityType: String, list: util.List[UFlag]): Unit = {
-    val jedis = GlobalRedisPool().getResource
-    GlobalRedisPool().returnResource(jedis)
-    val jsonArray = new JSONArray()
-    import scala.collection.JavaConversions._
-    for (u <- list) {
-      jsonArray.add(u)
-    }
-    val map = new util.HashMap[String, String]()
-    map.put(entityType, jsonArray.toJSONString)
-    jedis.hmset(hkey, map)
-  }
+	def insert(hkey: String, entityType: String, list: util.List[UFlag]): Unit = {
+		val jedis = GlobalRedisPool().getResource
+		GlobalRedisPool().returnResource(jedis)
+		val jsonArray = new JSONArray()
+		import scala.collection.JavaConversions._
+		for (u <- list) {
+			jsonArray.add(u)
+		}
+		val map = new util.HashMap[String, String]()
+		map.put(entityType, jsonArray.toJSONString)
+		jedis.hmset(hkey, map)
+	}
 
-  def insert(hKey: String, entityType: String, uFlag: UFlag): Unit = {
-    val jedis = GlobalRedisPool().getResource
-    GlobalRedisPool().returnResource(jedis)
-    val jsonArray = new JSONArray()
-    jsonArray.add(uFlag)
-    val map = new util.HashMap[String, String]()
-    map.put(entityType, jsonArray.toJSONString)
-    jedis.hmset(hKey, map)
-  }
+	def insert(hKey: String, entityType: String, uFlag: UFlag): Unit = {
+		val jedis = GlobalRedisPool().getResource
+		GlobalRedisPool().returnResource(jedis)
+		val jsonArray = new JSONArray()
+		jsonArray.add(uFlag)
+		val map = new util.HashMap[String, String]()
+		map.put(entityType, jsonArray.toJSONString)
+		jedis.hmset(hKey, map)
+	}
 
 }
