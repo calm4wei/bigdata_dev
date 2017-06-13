@@ -40,15 +40,15 @@ object GatherWarning extends Logging {
 
 		// brokers: kafka的broker 地址， topics: kafka订阅主题
 		val Array(brokers, topics) = Array(sparkConf.get("spark.kafka.stream.warning.brokers", "Master:9092,Work01:9092,Work03:9092"),
-			sparkConf.get("spark.kafka.stream.warning.topics", "gather"))
+			sparkConf.get("spark.kafka.stream.warning.topics", "gather2"))
 		val topicsSet = topics.split(",").toSet
 
 		// 构造 streaming integrate kafka 参数
-		println("brokers=" + brokers + " ,topic=" + topics + s", kafka.stream.warning.topics=${sparkConf.get("spark.kafka.stream.warning.topics")}")
+		println("brokers=" + brokers + " ,topic=" + topics)
 		val kafkaParams = Map[String, String](
 			"metadata.broker.list" -> brokers,
 			"auto.offset.reset" -> sparkConf.get("spark.kafka.stream.warning.auto.offset.reset", "largest"),
-			"group.id" -> sparkConf.get("spark.kafka.stream.warning.group.id", "cluster2")
+			"group.id" -> sparkConf.get("spark.kafka.stream.warning.group.id", "cluster3")
 		)
 
 		// 构造 kafka producer 参数
@@ -140,8 +140,11 @@ object GatherWarning extends Logging {
 
 			val reList = JSON.parseArray(redisArrString, classOf[UFlag])
 				.filter(u => DateUtils.compare(u.getTimestamp, -1))
-			val converList = bufferAsJavaList(reList)
+
+			// 如果uid已经存在，则返回
+			if (reList.map(m => m.getUid).contains(uFlag.getUid)) return
 			reList.add(uFlag)
+			val converList = bufferAsJavaList(reList)
 			// 更新redis
 			RedisUtils.insert(hKey, entityType, converList)
 			val t8 = System.currentTimeMillis()
@@ -158,6 +161,9 @@ object GatherWarning extends Logging {
 		} catch {
 			case jsonEx: JSONException => {
 				println(s"JSON parse Exception: ${jsonEx.getMessage}")
+			}
+			case castEx: ClassCastException => {
+				println(s"ClassCastException: ${castEx.getMessage}")
 			}
 			case jedisDataEx: JedisDataException => {
 				println(s"JedisDataException: ${jedisDataEx.getMessage}")
