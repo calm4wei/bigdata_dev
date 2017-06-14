@@ -12,6 +12,7 @@ import com.zqykj.bigdata.spark.alert.redis.RedisUtils
 import com.zqykj.job.geo.utils.GeoHash
 import kafka.serializer.StringDecoder
 import org.apache.log4j.Level
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, SparkConf}
 import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.kafka.KafkaManager
@@ -34,7 +35,7 @@ object GatherWarning extends Logging {
 			.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
 			.set("spark.executor.extraJavaOptions", "-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8")
 		//.set("spark.streaming.kafka.maxRatePerPartition", "10") // Direct 方式：从每个Kafka分区读取数据的最大速率（每秒记录数）
-		//.setMaster("local[4]")
+		//			.setMaster("local[4]")
 
 		val ssc = new StreamingContext(sparkConf, Milliseconds(sparkConf.getInt("spark.stream.kafka.batch.millis.duration", 2000)))
 
@@ -47,7 +48,7 @@ object GatherWarning extends Logging {
 		println("brokers=" + brokers + " ,topic=" + topics)
 		val kafkaParams = Map[String, String](
 			"metadata.broker.list" -> brokers,
-			"auto.offset.reset" -> sparkConf.get("spark.kafka.stream.warning.auto.offset.reset", "largest"),
+			// "auto.offset.reset" -> sparkConf.get("spark.kafka.stream.warning.auto.offset.reset", "largest"),
 			"group.id" -> sparkConf.get("spark.kafka.stream.warning.group.id", "cluster3")
 		)
 
@@ -68,7 +69,19 @@ object GatherWarning extends Logging {
 			ssc, kafkaParams, topicsSet).map(_._2)
 
 		val dataObjs = parseJson(messages)
-		compare(dataObjs, kafkaProParams, topicSet)
+		// compare(dataObjs, kafkaProParams, topicSet)
+
+		dataObjs.foreachRDD {
+			rdd => {
+				if (!rdd.isEmpty()) {
+					// 消息处理
+					processRdd(rdd, kafkaProParams, topicSet)
+
+					// 更新offsets
+					km.updateZKOffsets(rdd)
+				}
+			}
+		}
 
 		ssc.start()
 		ssc.awaitTermination()
@@ -83,6 +96,19 @@ object GatherWarning extends Logging {
 		//      println("Application stopped gracefully")
 		//    }
 
+	}
+
+	def processRdd(rdd: RDD[DetectedData], kafkaProParams: Map[String, String], topicSet: Set[String]): Unit = {
+		rdd.foreachPartition(p => {
+			MyKafkaProducer.setkafkaParams(kafkaProParams)
+			p.foreach {
+				line => {
+					println("update redis...")
+					updateRedis(line, topicSet)
+				}
+			}
+		}
+		)
 	}
 
 	def parseJson(dstream: DStream[String]): DStream[DetectedData] = {

@@ -1,5 +1,6 @@
 package org.apache.spark.streaming.kafka
 
+import com.zqykj.bigdata.alert.entity.DetectedData
 import kafka.common.TopicAndPartition
 import kafka.message.MessageAndMetadata
 import kafka.serializer.Decoder
@@ -40,6 +41,20 @@ class KafkaManager(val kafkaParams: Map[String, String]) extends Serializable {
 			KafkaUtils.createDirectStream[K, V, KD, VD, (K, V)](
 				ssc, kafkaParams, consumerOffsets, (mmd: MessageAndMetadata[K, V]) => (mmd.key, mmd.message))
 		}
+
+		// TODO　更新zookeeper上消费offsets
+		//		messages.foreachRDD(rdd => {
+		//			val offsetsList = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
+		//			for (offsets <- offsetsList) {
+		//				val topicAndPartition = TopicAndPartition(offsets.topic, offsets.partition)
+		//				val o = kc.setConsumerOffsets(groupId, Map((topicAndPartition, offsets.untilOffset)))
+		//				println(s"update zookeeper offsets.partition=${offsets.partition} ,fromOffset=${offsets.fromOffset} ,untilOffset=${offsets.untilOffset}")
+		//				if (o.isLeft) {
+		//					println(s"Error updating the offset to Kafka cluster: ${o.left.get}")
+		//				}
+		//			}
+		//		}
+		//		)
 		messages
 	}
 
@@ -113,13 +128,15 @@ class KafkaManager(val kafkaParams: Map[String, String]) extends Serializable {
 	  *
 	  * @param rdd
 	  */
-	def updateZKOffsets(rdd: RDD[(String, Long)]): Unit = {
+	def updateZKOffsets(rdd: RDD[DetectedData]): Unit = {
 		val groupId = kafkaParams.get("group.id").get
 		val offsetsList = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
 
 		for (offsets <- offsetsList) {
 			val topicAndPartition = TopicAndPartition(offsets.topic, offsets.partition)
 			val o = kc.setConsumerOffsets(groupId, Map((topicAndPartition, offsets.untilOffset)))
+			println(s"update zookeeper offsets.partition=${offsets.partition} ,fromOffset=${offsets.fromOffset} " +
+				s" ,untilOffset=${offsets.untilOffset}")
 			if (o.isLeft) {
 				println(s"Error updating the offset to Kafka cluster: ${o.left.get}")
 			}
