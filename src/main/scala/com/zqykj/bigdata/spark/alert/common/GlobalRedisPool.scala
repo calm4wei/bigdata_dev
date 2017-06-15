@@ -28,7 +28,8 @@ object GlobalRedisPool extends Serializable with Logging {
 		// 超时时间
 		val timeout = 10000
 
-		new JedisPool(jedisPoolConfig, host, port, timeout)
+		// 使用 dbIndex 0
+		new JedisPool(jedisPoolConfig, host, port, timeout, null, 0)
 
 	}
 
