@@ -31,7 +31,7 @@ object GatherWarning extends Logging {
 
 		val sparkConf = new SparkConf()
 			.setAppName("gather warning")
-			//.set("spark.streaming.stopGracefullyOnShutdown", "true") // 消息消费完成后，优雅的关闭spark streaming
+			.set("spark.streaming.stopGracefullyOnShutdown", "true") // 消息消费完成后，优雅的关闭spark streaming
 			.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
 			.set("spark.executor.extraJavaOptions", "-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8")
 		//.set("spark.streaming.kafka.maxRatePerPartition", "10") // Direct 方式：从每个Kafka分区读取数据的最大速率（每秒记录数）
@@ -66,19 +66,19 @@ object GatherWarning extends Logging {
 		// kafka直连方式： 指定topic，从指定的offset处开始消费
 		val km = new KafkaManager(kafkaParams)
 		val messages = km.createDirectStream[String, String, StringDecoder, StringDecoder](
-			ssc, kafkaParams, topicsSet).map(_._2)
+			ssc, kafkaParams, topicsSet).repartition(sparkConf.getInt("spark.warning.process.partition.num", 2))
 
-		val dataObjs = parseJson(messages)
+		// val dataObjs = parseJson(messages)
 		// compare(dataObjs, kafkaProParams, topicSet)
 
-		dataObjs.foreachRDD {
+		messages.foreachRDD {
 			rdd => {
 				if (!rdd.isEmpty()) {
 					// 消息处理
 					processRdd(rdd, kafkaProParams, topicSet)
 
 					// 更新offsets
-					km.updateZKOffsets(rdd)
+					//km.updateZKOffsets(rdd)
 				}
 			}
 		}
@@ -98,8 +98,9 @@ object GatherWarning extends Logging {
 
 	}
 
-	def processRdd(rdd: RDD[DetectedData], kafkaProParams: Map[String, String], topicSet: Set[String]): Unit = {
-		rdd.foreachPartition(p => {
+	def processRdd(rdd: RDD[(String, String)], kafkaProParams: Map[String, String], topicSet: Set[String]): Unit = {
+		val jsonRDD = parseJson(rdd)
+		jsonRDD.foreachPartition(p => {
 			MyKafkaProducer.setkafkaParams(kafkaProParams)
 			p.foreach {
 				line => {
@@ -109,6 +110,12 @@ object GatherWarning extends Logging {
 			}
 		}
 		)
+	}
+
+	def parseJson(rdd: RDD[(String, String)]): RDD[DetectedData] = {
+		rdd.map(line => {
+			JSON.parseObject(line._2, classOf[DetectedData])
+		})
 	}
 
 	def parseJson(dstream: DStream[String]): DStream[DetectedData] = {
