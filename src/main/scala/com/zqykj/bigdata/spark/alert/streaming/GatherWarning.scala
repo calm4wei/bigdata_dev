@@ -66,7 +66,8 @@ object GatherWarning extends Logging {
 		// kafka直连方式： 指定topic，从指定的offset处开始消费
 		val km = new KafkaManager(kafkaParams)
 		val messages = km.createDirectStream[String, String, StringDecoder, StringDecoder](
-			ssc, kafkaParams, topicsSet).repartition(sparkConf.getInt("spark.warning.process.partition.num", 2))
+			ssc, kafkaParams, topicsSet)
+		//.repartition(sparkConf.getInt("spark.warning.process.partition.num", 2))
 
 		// val dataObjs = parseJson(messages)
 		// compare(dataObjs, kafkaProParams, topicSet)

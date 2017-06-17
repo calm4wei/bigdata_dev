@@ -73,7 +73,8 @@ $SPARK_SUBMIT \
   --class $CLASS \
   --master yarn-cluster \
   --executor-memory 5G \
-  --num-executors 5 \
+  --num-executors 2 \
+  --executor-cores 2 \
   $ROOT/bigdata_dev-1.0-SNAPSHOT.jar"
 
 echo -e "$CMD"
