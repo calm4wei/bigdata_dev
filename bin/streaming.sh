@@ -2,11 +2,11 @@
 # Don't edit this file unless you know exactly what you're doing.
 
 Usage='''Usage: \n
-$0 <demo | d> \n
+$0 <demo | g> \n
 g\tGatherWarning, gather waring of spark streaming process.\n
 '''
 
-ROOT=$(cd $(dirname $0); pwd)
+ROOT="$(dirname $(cd $(dirname $0); pwd))"
 echo "$ROOT"
 
 #JAVA_OPTS="-Xmx2048m -Xmn256m "
@@ -25,7 +25,7 @@ run () {
   rm -f "$RUN_PATH/$PID_FILE"
 }
 
-if [ $# -lt 3 ]; then
+if [ $# -lt 1 ]; then
   echo -e "$Usage"
   exit 1
 fi
@@ -46,7 +46,7 @@ fi
 
 if [ ! -d "$RUN_PATH" ];then
   mkdir -p "$RUN_PATH"
-fi 
+fi
 
 case $1 in
    demo)
@@ -75,6 +75,7 @@ $SPARK_SUBMIT \
   --executor-memory 5G \
   --num-executors 2 \
   --executor-cores 2 \
+  --properties-file $CONF \
   $ROOT/bigdata_dev-1.0-SNAPSHOT.jar"
 
 echo -e "$CMD"
