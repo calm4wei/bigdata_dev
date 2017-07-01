@@ -52,6 +52,8 @@
             <includes>
                 <include>zqy.conf.template</include>
                 <include>log4j.properties</include>
+                <include>zqy-app.properties</include>
+                <include>zqy-base-station.properties</include>
             </includes>
         </fileSet>
         <!--Include dependent jars-->

@@ -46,8 +46,8 @@ class KafkaManager(val kafkaParams: Map[String, String]) extends Serializable {
 		//		messages.foreachRDD(rdd => {
 		//			val offsetsList = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
 		//			for (offsets <- offsetsList) {
-		//				val topicAndPartition = TopicAndPartition(offsets.topic, offsets.partition)
-		//				val o = kc.setConsumerOffsets(groupId, Map((topicAndPartition, offsets.untilOffset)))
+		//				val topicAndPartition = TopicAndPartition
+		//				val o = kc.setConsumerOffsets(groupId, Map((topicAndPartition, offsets.untilOffse(offsets.topic, offsets.partition)t)))
 		//				println(s"update zookeeper offsets.partition=${offsets.partition} ,fromOffset=${offsets.fromOffset} ,untilOffset=${offsets.untilOffset}")
 		//				if (o.isLeft) {
 		//					println(s"Error updating the offset to Kafka cluster: ${o.left.get}")

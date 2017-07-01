@@ -6,7 +6,7 @@ import com.zqykj.bigdata.spark.LoggerLevels
 import com.zqykj.bigdata.spark.alert.kafka.MyKafkaProducer
 import kafka.serializer.StringDecoder
 import org.apache.log4j.Level
-import org.apache.spark.{HashPartitioner, SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.streaming.kafka.KafkaManager
@@ -15,7 +15,6 @@ import org.apache.spark.streaming.kafka.KafkaManager
   * Created by weifeng on 2017/6/21.
   */
 object BaseStationWarning {
-
 
 	//Seq这个批次某个单词的次数
 	//Option[Int]：以前的结果
@@ -43,8 +42,10 @@ object BaseStationWarning {
 		val ssc = new StreamingContext(sc, Seconds(sparkConf.getInt("spark.stream.kafka.batch.second.duration", 2)))
 		ssc.checkpoint("checkpoint/baseStation")
 
+		val num = sparkConf.getInt("spark.warning.type.kafka.alert.num", 3)
+
 		// brokers: kafka的broker 地址， topics: kafka订阅主题
-		val Array(brokers, topics) = Array(sparkConf.get("spark.kafka.stream.warning.brokers", "wf-vm:9092"),
+		val Array(brokers, topics) = Array(sparkConf.get("spark.kafka.stream.warning.brokers", "Master:9092,Work01:9092,Work03:9092"),
 			sparkConf.get("spark.kafka.stream.warning.topics", "CallRecord"))
 		val topicsSet = topics.split(",").toSet
 
@@ -58,7 +59,7 @@ object BaseStationWarning {
 
 		// 构造 kafka producer 参数
 		val kafkaProParams = Map[String, String](
-			"bootstrap.servers" -> sparkConf.get("spark.warning.type.kafka.brokers", "wf-vm:9092"),
+			"bootstrap.servers" -> sparkConf.get("spark.warning.type.kafka.brokers", "Master:9092,Work01:9092,Work03:9092"),
 			"client.id" -> sparkConf.get("spark.warning.type.kafka.client.id", "BaseOutProducer"),
 			"key.serializer" -> sparkConf.get("spark.warning.type.kafka.key.serializer",
 				"org.apache.kafka.common.serialization.StringSerializer"),
@@ -77,17 +78,18 @@ object BaseStationWarning {
 		val crStream = parseJson(messages)
 		// 每slide 时间，统计 window 时间内的基站通话数量
 		val windowStream = crStream.reduceByKeyAndWindow((a: Int, b: Int) => (a + b),
-			Seconds(sparkConf.getInt("spark.warning.process.window.second.duration", 60)),
-			Seconds(sparkConf.getInt("spark.warning.process.slide.second.duration", 10)))
+			Seconds(sparkConf.getInt("spark.warning.process.window.second.duration", 4)),
+			Seconds(sparkConf.getInt("spark.warning.process.slide.second.duration", 2)))
 
 		// val updateResult = windowStream.updateStateByKey(updateFunc, new HashPartitioner(sc.defaultParallelism), true)
 		windowStream.foreachRDD(rdd => {
 			rdd.foreachPartition(p => {
 				MyKafkaProducer.setkafkaParams(kafkaProParams)
 				p.foreach(station => {
-					if (station._2 > 3) {
+					if (station._2 > num) {
 						// println(s"station warning: ${station.toString()}")
-						MyKafkaProducer.send(outTopicSet.head, "", station.toString(), true)
+						MyKafkaProducer.send(outTopicSet.head, s"time=", station.toString(), true)
+
 					}
 				})
 			})
@@ -103,6 +105,7 @@ object BaseStationWarning {
 			// TODO json 解析直接映射到实体类 和 解析成jsonObject性能比较
 			val callRecode = JSON.parseObject(line._2, classOf[CallRecode])
 			val lacAndci = callRecode.getLac + "_" + callRecode.getCi
+			// println(s"key=${line._1}")
 			(lacAndci, 1)
 		})
 	}
