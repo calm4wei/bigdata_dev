@@ -83,16 +83,19 @@ object BaseStationWarning {
 
 		// val updateResult = windowStream.updateStateByKey(updateFunc, new HashPartitioner(sc.defaultParallelism), true)
 		windowStream.foreachRDD(rdd => {
-			rdd.foreachPartition(p => {
-				MyKafkaProducer.setkafkaParams(kafkaProParams)
-				p.foreach(station => {
-					if (station._2 > num) {
-						// println(s"station warning: ${station.toString()}")
-						MyKafkaProducer.send(outTopicSet.head, s"time=", station.toString(), true)
+			if (!rdd.isEmpty()) {
+				rdd.foreachPartition(p => {
+					MyKafkaProducer.setkafkaParams(kafkaProParams)
+					p.foreach(station => {
+						if (station._2 > num) {
+							// println(s"station warning: ${station.toString()}")
+							MyKafkaProducer.send(outTopicSet.head, s"time=", station.toString(), true)
 
-					}
+						}
+					})
 				})
-			})
+			}
+
 		})
 
 		ssc.start()
