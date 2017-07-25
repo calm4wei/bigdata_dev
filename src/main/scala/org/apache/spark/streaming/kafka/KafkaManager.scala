@@ -1,6 +1,5 @@
 package org.apache.spark.streaming.kafka
 
-import com.zqykj.bigdata.alert.entity.DetectedData
 import kafka.common.TopicAndPartition
 import kafka.message.MessageAndMetadata
 import kafka.serializer.Decoder

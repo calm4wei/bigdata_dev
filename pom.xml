@@ -208,7 +208,7 @@
         <!--</repository>-->
         <repository>
             <id>snapshots</id>
-            <url>http://192.168.0.60:8001/repository/snapshots/</url>
+            <url>http://172.30.6.60:8001/repository/snapshots/</url>
         </repository>
         <repository>
             <id>mvn-repo</id>
