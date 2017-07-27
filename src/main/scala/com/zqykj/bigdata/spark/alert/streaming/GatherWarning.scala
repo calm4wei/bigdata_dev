@@ -61,6 +61,9 @@ object GatherWarning extends Logging {
 			"value.serializer" -> sparkConf.get("spark.warning.type.kafka.value.serializer",
 				"org.apache.kafka.common.serialization.StringSerializer")
 		)
+
+
+
 		val topicSet = sparkConf.get("spark.warning.type.kafka.congest.topics", "congestS").split(",").toSet
 
 		// kafka直连方式： 指定topic，从指定的offset处开始消费
