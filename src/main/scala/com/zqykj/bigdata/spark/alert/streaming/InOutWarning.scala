@@ -3,6 +3,7 @@ package com.zqykj.bigdata.spark.alert.streaming
 import com.zqykj.bigdata.spark.alert.common.OptionsConstans
 import com.zqykj.bigdata.spark.alert.sql.SqlExecutor
 import org.apache.commons.cli._
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
@@ -21,7 +22,13 @@ object InOutWarning {
 
     val sc = new SparkContext(sparkConf)
     val sqlExecutor = new SqlExecutor(sc)
-    sqlExecutor.executor()
+    // TODO 区域与经纬度的数据结构：<lat-lon, areaId>
+    val df = sqlExecutor.findMongo()
+
+    val broadcastVar = sc.broadcast()
+
+    val sscExecutor = new InOutStreamingExecutor(sc)
+    sscExecutor.executor()
 
   }
 

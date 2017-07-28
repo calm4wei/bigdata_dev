@@ -10,19 +10,20 @@ class SqlExecutor(val sc: SparkContext) {
 
   val sqlContext = new SQLContext(sc)
 
-  def executor(): Unit = {
+  def executor(): DataFrame = {
     val df = findMongo()
     //    val jsonRDD = df.toJSON
     //    println(jsonRDD.first())
     println(df.first())
+    df
   }
 
   def findMongo(): DataFrame = {
     val conf = sc.getConf
     val options = Map[String, String](
-      "host" -> "dev60",
-      "database" -> "alert",
-      "collection" -> "MonitorArea"
+      "host" -> conf.get("spark.streaming.mongodb.host", "dev60"),
+      "database" -> conf.get("spark.streaming.mongodb.db", "alert"),
+      "collection" -> conf.get("spark.streaming.mongodb.collection", "MonitorArea")
     )
     val df = sqlContext.read.format("com.stratio.datasource.mongodb").options(options).load
     df.select("in2OutCheck", "residentDurationThreashhold", "areaId", "shapes")

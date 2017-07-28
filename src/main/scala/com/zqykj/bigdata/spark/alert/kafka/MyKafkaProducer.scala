@@ -40,7 +40,7 @@ object MyKafkaProducer extends Serializable with Logging {
     * @param value
     * @param isAsync
     */
-  def send(topic: String, key: String, value: String, isAsync: Boolean): Unit = {
+  def send(topic: String, key: String, value: String, isAsync: Boolean = true): Unit = {
     if (isAsync) { // 异步发送
       producer.send(new ProducerRecord[String, String](topic, key, value), new Callback() {
         override def onCompletion(recordMetadata: RecordMetadata, e: Exception): Unit = {
