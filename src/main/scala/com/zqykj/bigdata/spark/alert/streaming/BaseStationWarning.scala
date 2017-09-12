@@ -93,7 +93,7 @@ object BaseStationWarning {
                     p.foreach(station => {
                         if (station._2 > num) {
                             // println(s"station warning: ${station.toString()}")
-                            MyKafkaProducer.send(outTopicSet.head, s"time=", station.toString(), true)
+                            MyKafkaProducer.send(outTopicSet.head, s"time=${System.currentTimeMillis()}", station.toString(), true)
 
                         }
                     })
