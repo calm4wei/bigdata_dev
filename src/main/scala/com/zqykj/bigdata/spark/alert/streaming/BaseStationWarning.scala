@@ -27,16 +27,19 @@ object BaseStationWarning {
         iter.map { case (word, current_count, history_count) => (word, current_count.sum + history_count.getOrElse(0)) }
     }
 
+    LoggerLevels.setStreamingLogLevels(Level.WARN)
+
     def main(args: Array[String]): Unit = {
-        LoggerLevels.setStreamingLogLevels(Level.WARN)
 
         val sparkConf = new SparkConf()
-            .setAppName("gather warning")
-            .set("spark.streaming.stopGracefullyOnShutdown", "true") // 消息消费完成后，优雅的关闭spark streaming
-            .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-            .set("spark.executor.extraJavaOptions", "-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8")
+            .setAppName("BaseStationWarning")
+        //            .set("spark.streaming.stopGracefullyOnShutdown", "true") // 消息消费完成后，优雅的关闭spark streaming
+        //            .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+        //            .set("spark.executor.extraJavaOptions", "-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8")
         //.set("spark.streaming.kafka.maxRatePerPartition", "10") // Direct 方式：从每个Kafka分区读取数据的最大速率（每秒记录数）
-        //.setMaster("local[4]")
+
+        if (sparkConf.getBoolean("spark.execute.local.model", true))
+            sparkConf.setMaster("local[4]").set("spark.ui.port", "4040")
 
         val sc = new SparkContext(sparkConf)
         val ssc = new StreamingContext(sc, Seconds(sparkConf.getInt("spark.stream.kafka.batch.second.duration", 2)))
@@ -45,7 +48,7 @@ object BaseStationWarning {
         val num = sparkConf.getInt("spark.warning.type.kafka.alert.num", 3)
 
         // brokers: kafka的broker 地址， topics: kafka订阅主题
-        val Array(brokers, topics) = Array(sparkConf.get("spark.kafka.stream.warning.brokers", "Master:9092,Work01:9092,Work03:9092"),
+        val Array(brokers, topics) = Array(sparkConf.get("spark.kafka.stream.warning.brokers", "bigdatacluster02:9092,bigdatacluster03:9092,bigdatacluster04:9092,bigdatacluster05:9092,bigdatacluster06:9092"),
             sparkConf.get("spark.kafka.stream.warning.topics", "CallRecord"))
         val topicsSet = topics.split(",").toSet
 
@@ -54,12 +57,12 @@ object BaseStationWarning {
         val kafkaParams = Map[String, String](
             "metadata.broker.list" -> brokers,
             // "auto.offset.reset" -> sparkConf.get("spark.kafka.stream.warning.auto.offset.reset", "largest"),
-            "group.id" -> sparkConf.get("spark.kafka.stream.warning.group.id", "baseConsumer")
+            "group.id" -> sparkConf.get("spark.kafka.stream.warning.group.id", "baseConsumer2")
         )
 
         // 构造 kafka producer 参数
         val kafkaProParams = Map[String, String](
-            "bootstrap.servers" -> sparkConf.get("spark.warning.type.kafka.brokers", "Master:9092,Work01:9092,Work03:9092"),
+            "bootstrap.servers" -> sparkConf.get("spark.warning.type.kafka.brokers", "bigdatacluster02:9092,bigdatacluster03:9092,bigdatacluster04:9092,bigdatacluster05:9092,bigdatacluster06:9092"),
             "client.id" -> sparkConf.get("spark.warning.type.kafka.client.id", "BaseOutProducer"),
             "key.serializer" -> sparkConf.get("spark.warning.type.kafka.key.serializer",
                 "org.apache.kafka.common.serialization.StringSerializer"),
@@ -79,6 +82,13 @@ object BaseStationWarning {
             offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
             rdd
         }
+
+        // wordcount
+        val pairs = messages.flatMap(_._2.split(":")).map(word => (word, 1))
+        val wordCounts = pairs.reduceByKey(_ + _)
+        wordCounts.print()
+
+        // 基站预警统计
         val crStream = parseJson(messages)
         // 每slide 时间，统计 window 时间内的基站通话数量
         val windowStream = crStream.reduceByKeyAndWindow((a: Int, b: Int) => (a + b),

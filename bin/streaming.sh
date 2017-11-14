@@ -61,6 +61,12 @@ case $1 in
     LOG_FILE="GatherWarning.out"
     PID_FILE="GatherWarning.pid"
     ;;
+   bs)
+    CLASS="com.zqykj.bigdata.spark.alert.streaming.BaseStationWarning"
+    CONF="$ROOT/conf/zqy-base-station.properties"
+    LOG_FILE="BaseStationWarning.out"
+    PID_FILE="BaseStationWarning.pid"
+    ;;
   *)
     echo -e "$Usage"
     exit 1
@@ -73,7 +79,6 @@ $SPARK_SUBMIT \
   --class $CLASS \
   --master yarn-cluster \
   --executor-memory 5G \
-  --num-executors 2 \
   --executor-cores 2 \
   --properties-file $CONF \
   $ROOT/bigdata_dev-1.0-SNAPSHOT.jar"
