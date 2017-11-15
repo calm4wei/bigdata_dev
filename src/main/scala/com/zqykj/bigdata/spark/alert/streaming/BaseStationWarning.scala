@@ -83,11 +83,6 @@ object BaseStationWarning {
             rdd
         }
 
-        // wordcount
-        val pairs = messages.flatMap(_._2.split(":")).map(word => (word, 1))
-        val wordCounts = pairs.reduceByKey(_ + _)
-        wordCounts.print()
-
         // 基站预警统计
         val crStream = parseJson(messages)
         // 每slide 时间，统计 window 时间内的基站通话数量
