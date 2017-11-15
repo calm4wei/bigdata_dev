@@ -16,7 +16,7 @@ object WordCount {
     def main(args: Array[String]): Unit = {
         LoggerLevels.setStreamingLogLevels(Level.WARN)
         val sparkConf = new SparkConf()
-            .setAppName("BaseStationWarning")
+            .setAppName("WordCount")
         //            .set("spark.streaming.stopGracefullyOnShutdown", "true") // 消息消费完成后，优雅的关闭spark streaming
         //            .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
         //            .set("spark.executor.extraJavaOptions", "-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8")
@@ -33,14 +33,14 @@ object WordCount {
 
         // brokers: kafka的broker 地址， topics: kafka订阅主题
         val Array(brokers, topics) = Array(sparkConf.get("spark.kafka.stream.warning.brokers", "bigdatacluster02:9092,bigdatacluster03:9092,bigdatacluster04:9092,bigdatacluster05:9092,bigdatacluster06:9092"),
-            sparkConf.get("spark.kafka.stream.warning.topics", "CallRecord"))
+            sparkConf.get("spark.kafka.stream.warning.topics", "CallRecord2"))
         val topicsSet = topics.split(",").toSet
 
         // 构造 streaming integrate kafka 参数
         println("brokers=" + brokers + " ,topic=" + topics)
         val kafkaParams = Map[String, String](
             "metadata.broker.list" -> brokers,
-            // "auto.offset.reset" -> sparkConf.get("spark.kafka.stream.warning.auto.offset.reset", "largest"),
+            "auto.offset.reset" -> sparkConf.get("spark.kafka.stream.warning.auto.offset.reset", "largest"),
             "group.id" -> sparkConf.get("spark.kafka.stream.warning.group.id", "baseConsumer2")
         )
 
@@ -68,9 +68,12 @@ object WordCount {
         }
 
         rdds.foreachRDD(rdd => {
-            val pairs = rdd.flatMap(_._2.split(":")).map(word => (word, 1))
+            val pairs = rdd.flatMap(_._2.split(",")).map(word => (word, 1))
             val wordCounts = pairs.reduceByKey(_ + _)
             wordCounts.foreachPartition(p => {
+                p.foreach(f => {
+                    print(f)
+                })
                 // 更新offsets
                 for (o <- offsetRanges) {
                     println(s"${o.topic} ${o.partition} ${o.fromOffset} ${o.untilOffset}")

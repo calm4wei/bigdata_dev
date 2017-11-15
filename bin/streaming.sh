@@ -67,6 +67,12 @@ case $1 in
     LOG_FILE="BaseStationWarning.out"
     PID_FILE="BaseStationWarning.pid"
     ;;
+   wc)
+    CLASS="com.zqykj.bigdata.spark.alert.streaming.WordCount"
+    CONF="$ROOT/conf/zqy-base-station.properties"
+    LOG_FILE="WordCount.out"
+    PID_FILE="WordCount.pid"
+    ;;
   *)
     echo -e "$Usage"
     exit 1
